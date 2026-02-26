@@ -38,51 +38,59 @@ def home():
         <title>The Oracle</title>
         <style>
             body {{
-                background: #0a0a0a;
-                color: #00ff00;
                 font-family: 'Courier New', monospace;
+                background: #000;
+                color: #0f0;
+                margin: 40px;
                 text-align: center;
-                padding: 50px;
             }}
             h1 {{
                 color: #ff00ff;
                 font-size: 3em;
-                text-shadow: 0 0 20px magenta;
+                text-shadow: 0 0 10px #ff00ff;
             }}
-            .info {{
+            .stats {{
                 background: #111;
-                border: 2px solid #00ff00;
+                border: 2px solid #0f0;
                 border-radius: 15px;
                 padding: 30px;
                 margin: 30px auto;
                 max-width: 600px;
             }}
+            .stat-item {{
+                font-size: 1.2em;
+                margin: 15px;
+                padding: 10px;
+                border-bottom: 1px solid #0f0;
+            }}
             a {{
-                color: #00ff00;
+                color: #0f0;
                 font-size: 1.3em;
                 text-decoration: none;
-                display: inline-block;
-                margin: 10px;
                 padding: 10px 20px;
-                border: 2px solid #00ff00;
+                border: 2px solid #0f0;
                 border-radius: 10px;
+                margin: 10px;
+                display: inline-block;
             }}
             a:hover {{
-                background: #00ff00;
-                color: black;
+                background: #0f0;
+                color: #000;
             }}
         </style>
     </head>
     <body>
         <h1>🧠 THE ORACLE</h1>
-        <div class='info'>
-            <p style='font-size:1.5em;'>✅ Servidor activo en Render</p>
-            <p>🎭 Personajes cargados: {len(PERSONAJES)}</p>
-            <p>⚡ Endpoints disponibles: /api/oracle, /health, /dashboard, /api/dashboard/stats</p>
+        <div class="stats">
+            <div class="stat-item">🎭 Personajes cargados: {len(PERSONAJES)}</div>
+            <div class="stat-item">✅ Servidor activo en Render</div>
+            <div class="stat-item">📊 Endpoints: /api/oracle, /health, /dashboard, /api/dashboard/stats</div>
+            <div class="stat-item">⚡ Sistema de métricas activado</div>
+            <div class="stat-item">🎯 Analizador con 60+ patrones</div>
         </div>
-        <a href='/health'>🔍 Health Check</a>
-        <a href='/dashboard'>📊 Dashboard</a>
-        <a href='/api/dashboard/stats'>📈 Stats JSON</a>
+        <a href="/dashboard">📊 IR AL DASHBOARD</a>
+        <a href="/health">🔍 HEALTH CHECK</a>
+        <a href="/api/dashboard/stats">📈 STATS JSON</a>
     </body>
     </html>
     """
