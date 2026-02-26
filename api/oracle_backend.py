@@ -1501,7 +1501,7 @@ if __name__ == '__main__':
     print("="*60)
     print("🧠 THE ORACLE - Backend MEJORADO v4.2 ULTRA")
     print("="*60)
-    print(f"📡 Servidor: http://0.0.0.0:5000")
+    print(f"📡 Servidor: http://0.0.0.0:5000 (local) / Puerto dinámico en Render")
     print(f"🎭 Personajes: {len(PERSONAJES)}")
     print(f"✨ Analizador: Regex + 80+ patrones (conquistador, general, político)")
     print(f"🎯 Sugerencias: DINÁMICAS y CONTEXTUALES (con inferencia de negativos)")
@@ -1512,6 +1512,6 @@ if __name__ == '__main__':
     print(f"✅ Compatible con frontend actual")
     print("="*60)
     
-    # Puerto para producción
-    port = int(os.environ.get('PORT', 10000))
+    # Puerto para producción (Render asigna automáticamente)
+    port = int(os.environ.get('PORT', 5000))  # 5000 es el valor por defecto local
     app.run(host='0.0.0.0', port=port, debug=False)
