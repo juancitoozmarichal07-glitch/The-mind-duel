@@ -30,71 +30,390 @@ CORS(app)
 # ===================================================================
 # RUTA RAÍZ - OBLIGATORIA PARA QUE RENDER MUESTRE ALGO EN LA URL BASE
 # ===================================================================
-@app.route('/')
-def home():
-    return f"""
-    <html>
-    <head>
-        <title>The Oracle</title>
-        <style>
-            body {{
-                font-family: 'Courier New', monospace;
-                background: #000;
-                color: #0f0;
-                margin: 40px;
-                text-align: center;
-            }}
-            h1 {{
-                color: #ff00ff;
-                font-size: 3em;
-                text-shadow: 0 0 10px #ff00ff;
-            }}
-            .stats {{
-                background: #111;
-                border: 2px solid #0f0;
-                border-radius: 15px;
-                padding: 30px;
-                margin: 30px auto;
-                max-width: 600px;
-            }}
-            .stat-item {{
-                font-size: 1.2em;
-                margin: 15px;
-                padding: 10px;
-                border-bottom: 1px solid #0f0;
-            }}
-            a {{
-                color: #0f0;
-                font-size: 1.3em;
-                text-decoration: none;
-                padding: 10px 20px;
-                border: 2px solid #0f0;
-                border-radius: 10px;
-                margin: 10px;
-                display: inline-block;
-            }}
-            a:hover {{
-                background: #0f0;
-                color: #000;
-            }}
-        </style>
-    </head>
-    <body>
-        <h1>🧠 THE ORACLE</h1>
-        <div class="stats">
-            <div class="stat-item">🎭 Personajes cargados: {len(PERSONAJES)}</div>
-            <div class="stat-item">✅ Servidor activo en Render</div>
-            <div class="stat-item">📊 Endpoints: /api/oracle, /health, /dashboard, /api/dashboard/stats</div>
-            <div class="stat-item">⚡ Sistema de métricas activado</div>
-            <div class="stat-item">🎯 Analizador con 60+ patrones</div>
-        </div>
-        <a href="/dashboard">📊 IR AL DASHBOARD</a>
-        <a href="/health">🔍 HEALTH CHECK</a>
-        <a href="/api/dashboard/stats">📈 STATS JSON</a>
-    </body>
-    </html>
-    """
+# ===================================================================
+# DASHBOARD HTML COMPLETO
+# ===================================================================
 
+DASHBOARD_HTML = '''
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Oracle Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 2px solid #ff00ff;
+        }
+        h1 {
+            color: #ff00ff;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+        .subtitle {
+            color: #00ff00;
+            font-size: 1.2em;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab-button {
+            padding: 15px 30px;
+            background: rgba(255, 0, 255, 0.2);
+            border: 2px solid #ff00ff;
+            color: #ff00ff;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .tab-button:hover {
+            background: rgba(255, 0, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .tab-button.active {
+            background: #ff00ff;
+            color: #1a1a2e;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #00ff00;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 3em;
+            color: #00ff00;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #e0e0e0;
+            font-size: 1em;
+        }
+        .section {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #00ff00;
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #00ff00;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: rgba(0, 255, 0, 0.2);
+            padding: 15px;
+            text-align: left;
+            color: #00ff00;
+            border-bottom: 2px solid #00ff00;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+        }
+        tr:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .badge-success {
+            background: rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+        }
+        .badge-error {
+            background: rgba(255, 0, 0, 0.3);
+            color: #ff0000;
+        }
+        .badge-warning {
+            background: rgba(255, 165, 0, 0.3);
+            color: #ffA500;
+        }
+        .refresh-button {
+            padding: 12px 25px;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .refresh-button:hover {
+            background: #ff00ff;
+            transform: scale(1.05);
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.5em;
+            color: #00ff00;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.2em;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .tabs { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 THE ORACLE</h1>
+            <p class="subtitle">Panel de Control y Métricas</p>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="refresh-button" onclick="loadAllData()">🔄 Actualizar Datos</button>
+                <button class="refresh-button" onclick="exportarTXT()" style="background: #00ff00;">📄 Descargar TXT</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('general')">📊 General</button>
+            <button class="tab-button" onclick="switchTab('personajes')">🎭 Personajes</button>
+            <button class="tab-button" onclick="switchTab('huecos')">🕳️ Huecos</button>
+            <button class="tab-button" onclick="switchTab('errores')">⚠️ Errores</button>
+        </div>
+
+        <div id="tab-general" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Partidas Totales</div>
+                    <div class="stat-value" id="stat-partidas">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Partidas Ganadas</div>
+                    <div class="stat-value" id="stat-ganadas">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Tasa de Victoria</div>
+                    <div class="stat-value" id="stat-tasa">-%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Preguntas Totales</div>
+                    <div class="stat-value" id="stat-preguntas">-</div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>🎯 Personajes Más Jugados</h2>
+                <table id="table-mas-usados">
+                    <thead><tr><th>#</th><th>Personaje</th><th>Veces Usado</th></tr></thead>
+                    <tbody><tr><td colspan="3" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="section">
+                <h2>🎲 Personajes Menos Jugados</h2>
+                <table id="table-menos-usados">
+                    <thead><tr><th>#</th><th>Personaje</th><th>Veces Usado</th></tr></thead>
+                    <tbody><tr><td colspan="3" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-personajes" class="tab-content">
+            <div class="section">
+                <h2>🎭 Estadísticas por Personaje</h2>
+                <table id="table-personajes">
+                    <thead><tr><th>Personaje</th><th>Tipo</th><th>Veces Usado</th><th>Ganadas</th><th>Perdidas</th><th>% Victoria</th><th>Dificultad</th></tr></thead>
+                    <tbody><tr><td colspan="7" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-huecos" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total de Huecos</div>
+                    <div class="stat-value" id="stat-huecos-total">-</div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>❓ Preguntas Más Frecuentes (No Respondidas)</h2>
+                <table id="table-huecos-frecuentes">
+                    <thead><tr><th>#</th><th>Pregunta</th><th>Ocurrencias</th></tr></thead>
+                    <tbody><tr><td colspan="3" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="section">
+                <h2>🎭 Personajes con Más Huecos</h2>
+                <table id="table-personajes-problematicos">
+                    <thead><tr><th>#</th><th>Personaje</th><th>Huecos</th></tr></thead>
+                    <tbody><tr><td colspan="3" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="section">
+                <h2>📝 Últimos Huecos Registrados</h2>
+                <table id="table-huecos-recientes">
+                    <thead><tr><th>Fecha</th><th>Pregunta</th><th>Personaje</th></tr></thead>
+                    <tbody><tr><td colspan="3" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-errores" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total de Errores</div>
+                    <div class="stat-value" id="stat-errores-total">-</div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>⚠️ Errores del Sistema</h2>
+                <table id="table-errores">
+                    <thead><tr><th>Fecha</th><th>Error</th><th>Contexto</th></tr></thead>
+                    <tbody><tr><td colspan="3" class="loading">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadGeneralStats() {
+            try {
+                const res = await fetch('/api/dashboard/stats');
+                const data = await res.json();
+                document.getElementById('stat-partidas').textContent = data.partidas_totales;
+                document.getElementById('stat-ganadas').textContent = data.partidas_ganadas;
+                document.getElementById('stat-tasa').textContent = data.tasa_victoria + '%';
+                document.getElementById('stat-preguntas').textContent = data.preguntas_totales;
+
+                const tbody1 = document.querySelector('#table-mas-usados tbody');
+                tbody1.innerHTML = (data.personajes_mas_usados || []).map((p, i) => `<tr><td>${i+1}</td><td>${p[0]}</td><td>${p[1]}</td></tr>`).join('') || '<tr><td colspan="3">No hay datos</td></tr>';
+                const tbody2 = document.querySelector('#table-menos-usados tbody');
+                tbody2.innerHTML = (data.personajes_menos_usados || []).map((p, i) => `<tr><td>${i+1}</td><td>${p[0]}</td><td>${p[1]}</td></tr>`).join('') || '<tr><td colspan="3">No hay datos</td></tr>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPersonajes() {
+            try {
+                const res = await fetch('/api/dashboard/personajes');
+                const data = await res.json();
+                const tbody = document.querySelector('#table-personajes tbody');
+                tbody.innerHTML = (data.personajes || []).map(p => {
+                    let dificultad = 'Normal';
+                    if (p.porcentaje_victoria > 70) dificultad = 'Fácil';
+                    else if (p.porcentaje_victoria < 30) dificultad = 'Difícil';
+                    return `<tr>
+                        <td>${p.nombre}</td>
+                        <td><span class="badge ${p.tipo === 'real' ? 'badge-success' : 'badge-warning'}">${p.tipo}</span></td>
+                        <td>${p.veces_usado}</td>
+                        <td>${p.partidas_ganadas}</td>
+                        <td>${p.partidas_perdidas}</td>
+                        <td>${p.porcentaje_victoria}%</td>
+                        <td>${dificultad}</td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="7">No hay datos</td></tr>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadHuecos() {
+            try {
+                const res = await fetch('/api/dashboard/huecos');
+                const data = await res.json();
+                document.getElementById('stat-huecos-total').textContent = data.total || 0;
+
+                const tbody1 = document.querySelector('#table-huecos-frecuentes tbody');
+                tbody1.innerHTML = (data.preguntas_frecuentes || []).map((p, i) => `<tr><td>${i+1}</td><td>${p[0]}</td><td><span class="badge badge-error">${p[1]}</span></td></tr>`).join('') || '<tr><td colspan="3">No hay datos</td></tr>';
+
+                const tbody2 = document.querySelector('#table-personajes-problematicos tbody');
+                tbody2.innerHTML = (data.personajes_problematicos || []).map((p, i) => `<tr><td>${i+1}</td><td>${p[0]}</td><td><span class="badge badge-warning">${p[1]}</span></td></tr>`).join('') || '<tr><td colspan="3">No hay datos</td></tr>';
+
+                const tbody3 = document.querySelector('#table-huecos-recientes tbody');
+                tbody3.innerHTML = (data.ultimos || []).reverse().slice(0, 30).map(h => `<tr><td>${new Date(h.timestamp).toLocaleString()}</td><td>${h.pregunta_original}</td><td>${h.personaje}</td></tr>`).join('') || '<tr><td colspan="3">No hay datos</td></tr>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadErrores() {
+            try {
+                const res = await fetch('/api/dashboard/errores');
+                const data = await res.json();
+                document.getElementById('stat-errores-total').textContent = data.total || 0;
+                const tbody = document.querySelector('#table-errores tbody');
+                tbody.innerHTML = (data.ultimos || []).reverse().map(e => `<tr><td>${new Date(e.timestamp).toLocaleString()}</td><td><span class="badge badge-error">${e.error}</span></td><td>${e.contexto}</td></tr>`).join('') || '<tr><td colspan="3">No hay errores</td></tr>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadAllData() {
+            await Promise.all([loadGeneralStats(), loadPersonajes(), loadHuecos(), loadErrores()]);
+        }
+
+        function exportarTXT() {
+            window.location.href = '/api/dashboard/exportar-txt';
+        }
+
+        loadAllData();
+        setInterval(loadAllData, 30000);
+    </script>
+</body>
+</html>
+'''
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template_string(DASHBOARD_HTML)
 # ===================================================================
 # CONFIGURACIÓN
 # ===================================================================
