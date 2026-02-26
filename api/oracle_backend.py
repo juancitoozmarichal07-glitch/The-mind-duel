@@ -28,6 +28,66 @@ app = Flask(__name__)
 CORS(app)
 
 # ===================================================================
+# RUTA RAÍZ - OBLIGATORIA PARA QUE RENDER MUESTRE ALGO EN LA URL BASE
+# ===================================================================
+@app.route('/')
+def home():
+    return f"""
+    <html>
+    <head>
+        <title>The Oracle</title>
+        <style>
+            body {{
+                background: #0a0a0a;
+                color: #00ff00;
+                font-family: 'Courier New', monospace;
+                text-align: center;
+                padding: 50px;
+            }}
+            h1 {{
+                color: #ff00ff;
+                font-size: 3em;
+                text-shadow: 0 0 20px magenta;
+            }}
+            .info {{
+                background: #111;
+                border: 2px solid #00ff00;
+                border-radius: 15px;
+                padding: 30px;
+                margin: 30px auto;
+                max-width: 600px;
+            }}
+            a {{
+                color: #00ff00;
+                font-size: 1.3em;
+                text-decoration: none;
+                display: inline-block;
+                margin: 10px;
+                padding: 10px 20px;
+                border: 2px solid #00ff00;
+                border-radius: 10px;
+            }}
+            a:hover {{
+                background: #00ff00;
+                color: black;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>🧠 THE ORACLE</h1>
+        <div class='info'>
+            <p style='font-size:1.5em;'>✅ Servidor activo en Render</p>
+            <p>🎭 Personajes cargados: {len(PERSONAJES)}</p>
+            <p>⚡ Endpoints disponibles: /api/oracle, /health, /dashboard, /api/dashboard/stats</p>
+        </div>
+        <a href='/health'>🔍 Health Check</a>
+        <a href='/dashboard'>📊 Dashboard</a>
+        <a href='/api/dashboard/stats'>📈 Stats JSON</a>
+    </body>
+    </html>
+    """
+
+# ===================================================================
 # CONFIGURACIÓN
 # ===================================================================
 
