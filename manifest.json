@@ -1,6 +1,6 @@
 {
-    "name": "The Oracle Game",
-    "short_name": "Oracle Game",
+    "name": "Mind Duel",
+    "short_name": "Mind duel",
     "description": "Adivina el personaje secreto que el Oráculo ha concebido.",
     "start_url": "/",
     "display": "standalone",
