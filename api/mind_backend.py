@@ -12,6 +12,7 @@ Versión: Analizador Astuto + Sugerencias Jerárquicas + Nuevos Campos Semántic
 - ✅ Dashboard completo
 - ✅ Límite de usos de sugerencias y control de refrescos
 - ✅ Adivinanza permitida desde la primera pregunta
+- ✅ Memoria contextual del cerebro (detecta repeticiones por categoría semántica)
 """
 
 from flask import Flask, request, jsonify, render_template_string, make_response
@@ -296,15 +297,157 @@ class Normalizador:
 
 
 # ===================================================================
-# ANALIZADOR DE PREGUNTAS MEJORADO CON REGEX
+# ANALIZADOR DE PREGUNTAS MEJORADO CON REGEX Y MEMORIA
 # ===================================================================
 
 class AnalizadorPreguntas:
-    """Analizador astuto con expresiones regulares"""
+    """Analizador astuto con expresiones regulares y memoria contextual"""
+    
+    # Categorías semánticas para detectar preguntas repetidas
+    CATEGORIAS_SEMANTICAS = {
+        'genero': ['hombre', 'mujer', 'masculino', 'femenino', 'varon', 'dama', 'sexo', 'genero'],
+        'vital': ['vivo', 'vive', 'viven', 'muerto', 'murio', 'fallecio', 'fallecida', 'fallecido'],
+        'tipo': ['real', 'ficticio', 'existio', 'inventado', 'historico', 'imaginario', 'fantasia'],
+        'riqueza': ['rico', 'pobre', 'millonario', 'adinerado', 'multimillonario', 'fortuna', 'dinero'],
+        'fama': ['famoso', 'conocido', 'celebre', 'popular', 'reconocido', 'mundialmente'],
+        'nacionalidad_europa': ['alemán', 'alemana', 'alemania', 'francés', 'francesa', 'francia', 'inglés', 'inglesa', 'inglaterra', 'británico', 'italiano', 'italiana', 'italia', 'español', 'española', 'españa', 'polaco', 'polaca', 'polonia', 'griego', 'grecia', 'romano'],
+        'nacionalidad_america': ['americano', 'americana', 'américa', 'estadounidense', 'usa', 'estados unidos', 'mexicano', 'mexicana', 'méxico'],
+        'nacionalidad_asia': ['asiático', 'asiática', 'asia', 'chino', 'china', 'japonés', 'japonesa', 'japón', 'indio', 'india'],
+        'nacionalidad_africa': ['africano', 'africana', 'áfrica', 'egipcio', 'egipcia', 'egipto'],
+        'epoca': ['antigua', 'antigüedad', 'medieval', 'edad media', 'renacimiento', 'moderna', 'contemporáneo', 'siglo', 'antes de cristo'],
+        'profesion_ciencia': ['científico', 'científica', 'investigador', 'físico', 'químico', 'biólogo', 'matemático', 'astrónomo'],
+        'profesion_arte': ['artista', 'pintor', 'pintora', 'escultor', 'escultora', 'músico', 'compositor'],
+        'profesion_literatura': ['escritor', 'escritora', 'autor', 'autora', 'novelista', 'poeta', 'poetisa', 'dramaturgo'],
+        'profesion_politica': ['político', 'política', 'presidente', 'presidenta', 'gobernante', 'líder', 'emperador', 'emperatriz', 'rey', 'reina', 'monarca'],
+        'profesion_militar': ['militar', 'soldado', 'guerrero', 'guerrera', 'general', 'conquistador'],
+        'profesion_otros': ['inventor', 'inventora', 'detective', 'explorador', 'exploradora', 'mago', 'maga', 'sacerdote'],
+        'poderes': ['poderes', 'superpoderes', 'volar', 'vuela', 'inmortal', 'inmortalidad', 'fuerza sobrehumana', 'magia', 'habilidades especiales'],
+        'armas': ['arma', 'armas', 'espada', 'arco', 'lanza', 'escudo', 'martillo', 'gadgets', 'tecnología avanzada'],
+        'fisico': ['gafas', 'lentes', 'anteojos', 'barba', 'bigote', 'calvo', 'alto', 'bajo', 'estatura', 'pelo'],
+        'universo': ['dc', 'dc comics', 'marvel', 'star wars', 'harry potter', 'señor de los anillos', 'tolkien', 'disney'],
+        'formato': ['libro', 'película', 'comic', 'serie', 'televisión', 'videojuego', 'anime', 'dibujos animados', 'internet'],
+        'logros': ['descubrimientos', 'premios', 'nobel', 'revolucionó', 'cambió la historia', 'legado'],
+        'moral': ['pacifista', 'violento', 'conquistador', 'libertad', 'religioso'],
+        'relaciones': ['enemigos', 'aliados', 'familia', 'huérfano', 'equipo'],
+    }
     
     @staticmethod
-    def analizar(pregunta: str, personaje: Dict) -> Dict:
+    def obtener_categoria_pregunta(pregunta_norm: str) -> Optional[str]:
+        """Determina la categoría semántica de una pregunta normalizada"""
+        for categoria, palabras in AnalizadorPreguntas.CATEGORIAS_SEMANTICAS.items():
+            for palabra in palabras:
+                # Buscar palabra completa o raíz
+                if re.search(r'\b' + re.escape(palabra) + r'\b', pregunta_norm):
+                    return categoria
+        return None
+    
+    @staticmethod
+    def verificar_pregunta_repetida(pregunta_norm: str, preguntas_hechas: List[str]) -> Optional[str]:
+        """Verifica si ya se preguntó sobre la misma categoría semántica"""
+        
+        # Obtener categoría de la pregunta actual
+        categoria_actual = AnalizadorPreguntas.obtener_categoria_pregunta(pregunta_norm)
+        
+        if not categoria_actual:
+            return None  # No es una pregunta categorizable
+        
+        # Revisar preguntas anteriores
+        for i, pregunta_anterior in enumerate(preguntas_hechas):
+            pregunta_anterior_norm = Normalizador.normalizar(pregunta_anterior)
+            categoria_anterior = AnalizadorPreguntas.obtener_categoria_pregunta(pregunta_anterior_norm)
+            
+            if categoria_anterior and categoria_anterior == categoria_actual:
+                # Misma categoría, consideramos repetida
+                # Mensaje específico según la categoría para dar variedad
+                mensajes = {
+                    'genero': "Ya me preguntaste sobre el género de otra forma.",
+                    'vital': "Ya preguntaste si está vivo o muerto con otras palabras.",
+                    'tipo': "Ya consultaste si es real o ficticio anteriormente.",
+                    'riqueza': "Ya indagaste sobre su situación económica.",
+                    'fama': "Ya preguntaste si es famoso o conocido.",
+                    'nacionalidad_europa': "Ya preguntaste sobre nacionalidades europeas.",
+                    'nacionalidad_america': "Ya preguntaste sobre nacionalidades americanas.",
+                    'nacionalidad_asia': "Ya preguntaste sobre nacionalidades asiáticas.",
+                    'nacionalidad_africa': "Ya preguntaste sobre nacionalidades africanas.",
+                    'epoca': "Ya preguntaste sobre la época en que vive/vivió.",
+                    'profesion_ciencia': "Ya preguntaste sobre profesiones científicas.",
+                    'profesion_arte': "Ya preguntaste sobre profesiones artísticas.",
+                    'profesion_literatura': "Ya preguntaste sobre profesiones literarias.",
+                    'profesion_politica': "Ya preguntaste sobre cargos políticos.",
+                    'profesion_militar': "Ya preguntaste sobre su faceta militar.",
+                    'profesion_otros': "Ya preguntaste sobre otras profesiones.",
+                    'poderes': "Ya preguntaste si tiene poderes o habilidades.",
+                    'armas': "Ya preguntaste si usa armas o artefactos.",
+                    'fisico': "Ya preguntaste sobre características físicas.",
+                    'universo': "Ya preguntaste sobre el universo al que pertenece.",
+                    'formato': "Ya preguntaste sobre el formato o medio de origen.",
+                    'logros': "Ya preguntaste sobre sus logros o descubrimientos.",
+                    'moral': "Ya preguntaste sobre su perfil moral.",
+                    'relaciones': "Ya preguntaste sobre sus relaciones."
+                }
+                
+                mensaje = mensajes.get(categoria_actual, "Ya me preguntaste sobre eso de otra forma.")
+                return mensaje
+        
+        return None
+    
+    @staticmethod
+    def verificar_contradiccion(pregunta_norm: str, respuestas_previas: List[str], preguntas_previas: List[str]) -> Optional[str]:
+        """Detecta contradicciones con respuestas anteriores"""
+        # Buscar si preguntó "¿Es real?" y respondió "Sí", y ahora pregunta "¿Es ficticio?"
+        if 'ficticio' in pregunta_norm or 'inventado' in pregunta_norm or 'imaginario' in pregunta_norm:
+            for i, p in enumerate(preguntas_previas):
+                p_norm = Normalizador.normalizar(p)
+                if ('real' in p_norm or 'existio' in p_norm) and i < len(respuestas_previas):
+                    if respuestas_previas[i] == 'Sí':
+                        return "Eso contradice lo que ya sabés. Antes me preguntaste si era real y dije que sí."
+        
+        # Lo opuesto: preguntó "¿Es ficticio?" y ahora pregunta "¿Es real?"
+        if 'real' in pregunta_norm or 'existio' in pregunta_norm:
+            for i, p in enumerate(preguntas_previas):
+                p_norm = Normalizador.normalizar(p)
+                if ('ficticio' in p_norm or 'inventado' in p_norm) and i < len(respuestas_previas):
+                    if respuestas_previas[i] == 'Sí':
+                        return "Eso contradice lo que ya sabés. Antes me preguntaste si era ficticio y dije que sí."
+        
+        return None
+    
+    @staticmethod
+    def evaluar_progreso(preguntas_count: int, preguntas_previas: List[str], respuestas_previas: List[str]) -> Optional[str]:
+        """Evalúa el progreso del jugador y da retroalimentación contextual"""
+        if preguntas_count >= 15:
+            # Casi al final, ánimo
+            if random.random() < 0.3:  # 30% de probabilidad
+                return "Estás muy cerca... casi lo tenés."
+        elif preguntas_count >= 10:
+            # Mitad del camino
+            if random.random() < 0.2:
+                # Verificar si hay muchas preguntas no comprendidas
+                no_comprendidas = sum(1 for r in respuestas_previas if r == 'No lo sé')
+                if no_comprendidas >= 3:
+                    return "Noto que algunas preguntas no las entiendo. ¿Probás con otro enfoque?"
+        elif preguntas_count >= 5:
+            # Primeras preguntas
+            if random.random() < 0.15:
+                return "Vas por buen camino. Seguí preguntando."
+        
+        return None
+    
+    @staticmethod
+    def analizar(pregunta: str, personaje: Dict, preguntas_previas: List[str] = None, respuestas_previas: List[str] = None) -> Dict:
         pregunta_norm = Normalizador.normalizar(pregunta)
+        
+        # Verificar memoria contextual
+        if preguntas_previas and respuestas_previas:
+            # Pregunta repetida por categoría semántica
+            mensaje_repetido = AnalizadorPreguntas.verificar_pregunta_repetida(pregunta_norm, preguntas_previas)
+            if mensaje_repetido:
+                return {'answer': 'Ya preguntaste eso', 'clarification': mensaje_repetido}
+            
+            # Contradicción
+            mensaje_contradiccion = AnalizadorPreguntas.verificar_contradiccion(pregunta_norm, respuestas_previas, preguntas_previas)
+            if mensaje_contradiccion:
+                return {'answer': 'Cuidado', 'clarification': mensaje_contradiccion}
         
         # ========== TIPO ==========
         if re.search(r'\b(real|existio|historico|carne y hueso|de verdad)\b', pregunta_norm):
@@ -316,7 +459,7 @@ class AnalizadorPreguntas:
             return {'answer': 'Sí' if es_ficticio else 'No', 'clarification': ''}
         
         # ========== GÉNERO ==========
-        if re.search(r'\b(masculino|es (un )?hombre|sexo masculino|del sexo masculino|es (un )?tipo)\b', pregunta_norm):
+        if re.search(r'\b(masculino|es (un )?hombre|sexo masculino|del sexo masculino|es (un )?tipo|varon)\b', pregunta_norm):
             es_hombre = personaje.get('genero') == 'masculino'
             return {'answer': 'Sí' if es_hombre else 'No', 'clarification': ''}
         
@@ -629,10 +772,6 @@ class AnalizadorPreguntas:
             return {'answer': 'Sí' if iconico else 'No', 'clarification': ''}
         
         if re.search(r'\b(hizo descubrimientos?|descubrimientos? importantes|aportes a la ciencia|inventos científicos)\b', pregunta_norm):
-            descubrio = personaje.get('impacto', {}).get('hizo_descubrimientos', False)
-            return {'answer': 'Sí' if descubrio else 'No', 'clarification': ''}
-        
-        if re.search(r'\b(descubrimientos científicos?|aportes a la ciencia|inventos científicos)\b', pregunta_norm):
             descubrio = personaje.get('impacto', {}).get('hizo_descubrimientos', False)
             return {'answer': 'Sí' if descubrio else 'No', 'clarification': ''}
         
@@ -1624,7 +1763,13 @@ def oracle_endpoint():
             pregunta = data.get('question', '')
             personaje = current_game['character']
             
-            resultado = AnalizadorPreguntas.analizar(pregunta, personaje)
+            # Usar el analizador con memoria contextual
+            resultado = AnalizadorPreguntas.analizar(
+                pregunta, 
+                personaje,
+                current_game['questions'],
+                current_game['answers']
+            )
             
             current_game['questions'].append(pregunta)
             current_game['answers'].append(resultado['answer'])
@@ -1913,7 +2058,7 @@ DASHBOARD_HTML = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Oracle Dashboard</title>
+    <title>🧠 MIND Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -2307,9 +2452,9 @@ if __name__ == '__main__':
     print("✅ Límite de sugerencias (5 usos) y control de refrescos (3 por ciclo)")
     print("✅ Pistas desbloqueadas por número de preguntas (5 y 10)")
     print("✅ Adivinanza permitida desde la primera pregunta")
+    print("✅ Memoria contextual del cerebro (detecta repeticiones por categoría semántica)")
     print("✅ Modo DEBUG activado")
     print("=" * 60)
     
-# Puerto para producción
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    # VERSIÓN LOCAL - Puerto fijo 5000 con debug=True
+    app.run(host='0.0.0.0', port=5000, debug=True)
