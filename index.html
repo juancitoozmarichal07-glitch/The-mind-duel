@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>The Oracle Game</title>
+    <title>MIND DUEL</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,10 +16,52 @@
             <div id="lightning-overlay"></div>
             <div id="title-layout">
                 <div id="title-brain">🧠</div>
-                <h1 id="game-title" data-text="THE ORACLE GAME">THE ORACLE GAME</h1>
+                <h1 id="game-title" data-text="MIND DUEL">MIND DUEL</h1>
                 <div id="title-buttons">
-                    <button id="start-button" class="button-green">COMENZAR</button>
+                    <button id="start-button" class="button-green">JUGAR</button>
                     <button id="exit-button" class="button-red">SALIR</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PANTALLA DE INSTRUCCIONES (NUEVA) -->
+        <div id="instructions-screen" class="screen hidden">
+            <div class="instructions-container">
+                <div class="instructions-content">
+                    <div class="instructions-brain">🧠</div>
+                    <h2 class="instructions-title">MIND DUEL</h2>
+                    <div class="instructions-role">
+                        <span class="role-player">👤 TÚ</span>
+                        <span class="role-vs">VS</span>
+                        <span class="role-brain">🧠 CEREBRO</span>
+                    </div>
+                    <div class="instructions-text">
+                        <p><span class="highlight">Vos sos el detective.</span> El Cerebro ya eligió un personaje secreto. Tu misión: adivinarlo en 20 preguntas.</p>
+                        
+                        <div class="rules-list">
+                            <div class="rule-item">
+                                <span class="rule-icon">❓</span>
+                                <span class="rule-text">Hacé preguntas que se respondan con SÍ o NO</span>
+                            </div>
+                            <div class="rule-item">
+                                <span class="rule-icon">💡</span>
+                                <span class="rule-text"><span class="highlight">SUGERENCIAS:</span> 5 por partida (te ayudan a preguntar mejor)</span>
+                            </div>
+                            <div class="rule-item">
+                                <span class="rule-icon">🔍</span>
+                                <span class="rule-text"><span class="highlight">PISTAS:</span> Se desbloquean en pregunta 5 y 10</span>
+                            </div>
+                            <div class="rule-item">
+                                <span class="rule-icon">🎯</span>
+                                <span class="rule-text"><span class="highlight">ADIVINAR:</span> Cuando estés seguro, usá el botón morado</span>
+                            </div>
+                        </div>
+                        
+                        <p class="instructions-footer">¿Listo para el desafío?</p>
+                    </div>
+                    <div class="instructions-buttons">
+                        <button id="start-game-btn" class="button-green">¡COMENZAR!</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -28,22 +70,22 @@
         <div id="main-game-screen" class="screen hidden">
             <div class="game-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <div style="color:#0f0;">🧠 ORÁCULO</div>
+                    <div style="color:#0f0;">🧠 CEREBRO</div>
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <div id="question-counter" style="color:#0f0;">0/20</div>
                         <button id="back-to-menu-button">← MENÚ</button>
                     </div>
                 </div>
                 
-                <!-- Línea verde principal (más abajo) -->
+                <!-- Línea verde principal -->
                 <div class="main-divider"></div>
                 
-                <!-- Espacio para el timer (entre línea y subrayado) -->
+                <!-- Espacio para el timer -->
                 <div class="timer-space">
                     <div id="timer-display">00:00</div>
                 </div>
                 
-                <!-- Subrayado del timer (línea fina) -->
+                <!-- Subrayado del timer -->
                 <div class="timer-underline"></div>
             </div>
             
