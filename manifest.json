@@ -1,7 +1,7 @@
 {
     "name": "Mind Duel",
     "short_name": "Mind duel",
-    "description": "Adivina el personaje secreto que el Oráculo ha concebido.",
+    "description": "Adivina el personaje secreto que el Cerebro ha concebido.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#000000",
