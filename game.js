@@ -7,7 +7,7 @@
 const config = {
     questionsLimit: 20,
     typewriterSpeed: 20,
-    backendURL: https://the-oracle-game.onrender.com,
+    backendURL: 'https://the-mind-duel.onrender.com',
     suggestionsAfterQuestion: 2,
     hintsAfterQuestion: 5,
     maxHints: 2
@@ -196,18 +196,20 @@ let state = {
     maxSuggestions: 5,
     lastSuggestions: [],
     currentSuggestions: [],
-    remainingRefreshes: 3      // Número de cambios de sugerencias restantes en el ciclo actual
+    remainingRefreshes: 3
 };
 
 // --- ELEMENTOS DOM ---
 const el = {
     titleScreen: document.getElementById('title-screen'),
+    instructionsScreen: document.getElementById('instructions-screen'),
     gameScreen: document.getElementById('main-game-screen'),
     winScreen: document.getElementById('win-screen'),
     loseScreen: document.getElementById('lose-screen'),
     
     startBtn: document.getElementById('start-button'),
     exitBtn: document.getElementById('exit-button'),
+    startGameBtn: document.getElementById('start-game-btn'),
     backBtn: document.getElementById('back-to-menu-button'),
     askBtn: document.getElementById('ask-button'),
     suggestionsBtn: document.getElementById('suggestions-btn'),
@@ -261,7 +263,12 @@ function updateTimerDisplay() {
 }
 
 // === FUNCIONES PRINCIPALES ===
-async function startGame() {
+function showInstructions() {
+    playSound('button');
+    showScreen('instructions');
+}
+
+function startGame() {
     // Inicializar audio y reproducir sonidos de inicio
     if (!audioCtx) initAudio();
     playSound('start');
@@ -273,15 +280,13 @@ async function startGame() {
     
     addMessageWithBubble('Concibiendo un nuevo enigma...', 'brain');
     
-    try {
-        const response = await fetch(config.backendURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'start' })
-        });
-        
-        const data = await response.json();
-        
+    fetch(config.backendURL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' })
+    })
+    .then(response => response.json())
+    .then(data => {
         if (data.error) {
             addMessageWithBubble('Error al iniciar. Inténtalo de nuevo.', 'system');
             return;
@@ -297,11 +302,11 @@ async function startGame() {
             el.questionInput.focus();
             updateButtonStates();
         });
-        
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error:', error);
         addMessageWithBubble('Error de conexión con el backend.', 'system');
-    }
+    });
 }
 
 async function askQuestion() {
@@ -668,7 +673,6 @@ function addMessageWithBubble(text, sender, callback, skipTypewriter = false) {
     senderName.className = 'message-sender';
     senderName.style.color = sender === 'brain' ? '#ff00ff' : (sender === 'player' ? '#0f0' : '#888');
     
-    // Cambiar "Oráculo" por "Cerebro"
     if (sender === 'brain') {
         senderName.textContent = ' Cerebro:';
     } else if (sender === 'player') {
@@ -715,14 +719,27 @@ function scrollToBottom() {
 
 function showScreen(screenName) {
     el.titleScreen.classList.add('hidden');
+    el.instructionsScreen.classList.add('hidden');
     el.gameScreen.classList.add('hidden');
     el.winScreen.classList.add('hidden');
     el.loseScreen.classList.add('hidden');
-    el[`${screenName}Screen`].classList.remove('hidden');
+    
+    if (screenName === 'title') {
+        el.titleScreen.classList.remove('hidden');
+    } else if (screenName === 'instructions') {
+        el.instructionsScreen.classList.remove('hidden');
+    } else if (screenName === 'game') {
+        el.gameScreen.classList.remove('hidden');
+    } else if (screenName === 'win') {
+        el.winScreen.classList.remove('hidden');
+    } else if (screenName === 'lose') {
+        el.loseScreen.classList.remove('hidden');
+    }
 }
 
 // === EVENT LISTENERS ===
-el.startBtn.addEventListener('click', startGame);
+el.startBtn.addEventListener('click', showInstructions);
+el.startGameBtn.addEventListener('click', startGame);
 el.exitBtn.addEventListener('click', () => {
     playSound('button');
     window.close();
@@ -755,7 +772,7 @@ console.log('🧠 MIND DUEL - Versión Arcade con temporizador y sonidos');
 // EFECTO DE APAGADO - EL CEREBRO TE EXPULSA (Versión legible)
 // ===================================================================
 
-// Añadir estilos de animación (manteniendo el formato legible)
+// Añadir estilos de animación
 const shutdownStyle = document.createElement('style');
 shutdownStyle.textContent = `
     .shutdown-effect {
@@ -769,7 +786,6 @@ shutdownStyle.textContent = `
         100% { transform: scaleY(0) scaleX(2); opacity: 0; }
     }
     
-    /* Mismo formato legible que usaste antes */
     .farewell-message {
         position: fixed;
         top: 50%;
@@ -870,11 +886,9 @@ if (el.exitBtn) {
     
     el.exitBtn.addEventListener('click', () => {
         playSound('button');
-        // Efecto de apagado
         const screen = document.getElementById('arcade-screen');
         screen.classList.add('shutdown-effect');
         
-        // Mensaje de despedida (mismo formato legible)
         const farewell = document.createElement('div');
         farewell.className = 'farewell-message';
         farewell.innerHTML = `
