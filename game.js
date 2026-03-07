@@ -7,18 +7,19 @@
 const config = {
     questionsLimit: 20,
     typewriterSpeed: 20,
-    backendURL: 'https://the-mind-duel.onrender.com/api/oracle',
+    backendURL: 'http://127.0.0.1:5000/api/oracle',
     suggestionsAfterQuestion: 2,
     hintsAfterQuestion: 5,
     maxHints: 2
 };
 
 // ===================================================================
-// GENERADOR DE SONIDOS MEJORADO (Web Audio API)
+// GENERADOR DE SONIDOS MEJORADO (Web Audio API + MP3)
 // ===================================================================
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let backgroundInterval = null;
+let backgroundAudio = null; // Para el MP3 de fondo
 
 // Inicializar audio (llamar desde un evento de usuario)
 function initAudio() {
@@ -129,48 +130,32 @@ function generateSound(type) {
             break;
             
         case 'background':
-            if (backgroundInterval) clearInterval(backgroundInterval);
+            // Detener música anterior si existe
+            if (backgroundAudio) {
+                backgroundAudio.pause();
+                backgroundAudio = null;
+            }
             
-            const playBackgroundNote = () => {
-                if (!audioCtx || audioCtx.state !== 'running') return;
-                
-                const now = audioCtx.currentTime;
-                
-                const osc1 = audioCtx.createOscillator();
-                const gain1 = audioCtx.createGain();
-                osc1.connect(gain1);
-                gain1.connect(audioCtx.destination);
-                
-                osc1.frequency.value = 220;
-                gain1.gain.setValueAtTime(0.02, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
-                
-                osc1.start(now);
-                osc1.stop(now + 1.0);
-                
-                setTimeout(() => {
-                    if (!audioCtx || audioCtx.state !== 'running') return;
-                    const osc2 = audioCtx.createOscillator();
-                    const gain2 = audioCtx.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(audioCtx.destination);
-                    
-                    osc2.frequency.value = 330;
-                    gain2.gain.setValueAtTime(0.02, audioCtx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-                    
-                    osc2.start();
-                    osc2.stop(audioCtx.currentTime + 0.8);
-                }, 1200);
-            };
+            // Crear nuevo elemento de audio con el MP3
+            backgroundAudio = new Audio('mind_ambient.mp3');
+            backgroundAudio.loop = true;        // Repetir infinito
+            backgroundAudio.volume = 0.3;        // Volumen suave
             
-            playBackgroundNote();
-            backgroundInterval = setInterval(playBackgroundNote, 2500);
+            // Intentar reproducir (puede ser bloqueado por autoplay)
+            backgroundAudio.play().catch(e => {
+                console.log('🎵 Autoplay bloqueado. Se reproducirá después de interactuar.');
+            });
+            
             break;
     }
 }
 
 function stopBackgroundMusic() {
+    if (backgroundAudio) {
+        backgroundAudio.pause();
+        backgroundAudio.currentTime = 0;
+        backgroundAudio = null;
+    }
     if (backgroundInterval) {
         clearInterval(backgroundInterval);
         backgroundInterval = null;
@@ -272,7 +257,7 @@ function startGame() {
     // Inicializar audio y reproducir sonidos de inicio
     if (!audioCtx) initAudio();
     playSound('start');
-    playSound('background');
+    playSound('background'); // Esto inicia el MP3
     
     showScreen('game');
     resetGame();
